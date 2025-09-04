@@ -1,0 +1,7 @@
+{
+  "rtsp_cameras": {
+    "camera_1": "rtsp://admin:admin@192.168.1.201:554/avstream/channel=1/stream=0.sdp",
+    "camera_2": "rtsp://admin:admin@192.168.1.202:554/avstream/channel=1/stream=0.sdp"
+  },
+  "s3_url": "https://api.easyparkai.com/api/Common/Upload?modulename=anpr"
+}
