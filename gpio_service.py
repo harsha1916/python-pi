@@ -50,6 +50,11 @@ except ImportError:
 class GPIOService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        
+        # Check GPIO availability with detailed logging
+        self.logger.info(f"GPIO_AVAILABLE: {GPIO_AVAILABLE}")
+        self.logger.info(f"config.GPIO_ENABLED: {config.GPIO_ENABLED}")
+        
         self.gpio_available = GPIO_AVAILABLE and config.GPIO_ENABLED
         self.monitoring = False
         self.monitor_thread = None
@@ -62,26 +67,41 @@ class GPIOService:
             'camera_2': config.GPIO_CAMERA_2_PIN
         }
         
+        self.logger.info(f"GPIO pins configured: {self.pins}")
+        
         if self.gpio_available:
+            self.logger.info("GPIO is available and enabled, setting up...")
             self._setup_gpio()
         else:
+            if not GPIO_AVAILABLE:
+                self.logger.warning("RPi.GPIO not available - running in mock mode")
+            if not config.GPIO_ENABLED:
+                self.logger.warning("GPIO disabled in config - running in mock mode")
             self.logger.warning("GPIO not available or disabled. Running in mock mode.")
     
     def _setup_gpio(self):
         """Initialize GPIO pins."""
         try:
+            self.logger.info("Setting GPIO mode to BCM...")
             GPIO.setmode(GPIO.BCM)
+            self.logger.info("GPIO mode set successfully")
             
             # Setup pins as input with pull-up resistors
             for camera_id, pin in self.pins.items():
+                self.logger.info(f"Setting up GPIO pin {pin} for {camera_id}...")
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 self.pin_states[pin] = GPIO.input(pin)
-                self.logger.info(f"GPIO pin {pin} configured for {camera_id}")
+                self.logger.info(f"GPIO pin {pin} configured for {camera_id} (initial state: {self.pin_states[pin]})")
             
             self.logger.info("GPIO setup completed successfully")
             
+        except PermissionError as e:
+            self.logger.error(f"GPIO permission denied: {e}")
+            self.logger.error("Make sure your user is in the 'gpio' group: sudo usermod -a -G gpio $USER")
+            self.gpio_available = False
         except Exception as e:
             self.logger.error(f"Failed to setup GPIO: {e}")
+            self.logger.error(f"Error type: {type(e).__name__}")
             self.gpio_available = False
     
     def register_callback(self, camera_id: str, callback: Callable):
