@@ -16,6 +16,7 @@ from capture_service import CameraService
 from uploader import ImageUploader
 from local_storage import LocalStorageManager
 from gpio_service import gpio_service
+import config
 from config import RTSP_CAMERAS, S3_API_URL, MAX_RETRIES, RETRY_DELAY
 from logging_config import setup_logging
 
