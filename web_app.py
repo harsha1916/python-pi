@@ -417,10 +417,22 @@ def get_gpio_status():
     """Get GPIO status for all cameras."""
     global gpio_status
     
+    # Add detailed debug information
+    debug_info = {
+        'gpio_available': gpio_service.is_gpio_available(),
+        'gpio_service_available': gpio_service.gpio_available,
+        'config_gpio_enabled': config.GPIO_ENABLED,
+        'gpio_pins': {
+            'camera_1': config.GPIO_CAMERA_1_PIN,
+            'camera_2': config.GPIO_CAMERA_2_PIN
+        }
+    }
+    
     return jsonify({
         'success': True,
         'gpio_available': gpio_service.is_gpio_available(),
-        'gpio_status': gpio_status
+        'gpio_status': gpio_status,
+        'debug_info': debug_info
     })
 
 @app.route('/api/gpio-toggle', methods=['POST'])
@@ -437,7 +449,17 @@ def toggle_gpio():
             return jsonify({'success': False, 'message': 'Invalid camera ID'}), 400
         
         if not gpio_service.is_gpio_available():
-            return jsonify({'success': False, 'message': 'GPIO not available'}), 400
+            # Log detailed GPIO status for debugging
+            logging.error(f"GPIO not available. GPIO_AVAILABLE: {gpio_service.gpio_available}")
+            logging.error(f"GPIO_ENABLED: {config.GPIO_ENABLED}")
+            return jsonify({
+                'success': False, 
+                'message': 'GPIO not available. Check logs for details.',
+                'debug_info': {
+                    'gpio_available': gpio_service.gpio_available,
+                    'gpio_enabled': config.GPIO_ENABLED
+                }
+            }), 400
         
         # Update GPIO status
         gpio_status[camera_id] = enabled
